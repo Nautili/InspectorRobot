@@ -1,13 +1,41 @@
 import random
 
+#contains class information for individual robots
+class Robot:
+     def __init__(self, rid, x, y, maxSpeed = 0.005, vis = 0.15):
+          self.rid = rid
+          self.x = x
+          self.y = y
+          self.vis = vis
+          self.maxSpeed = maxSpeed 
+          self.nearSame = []
+          self.nearOther = []
+
+#return distance between two robots
 def dist(r1, r2):
      return ((r1.x - r2.x)**2 + (r1.y - r2.y)**2)**(1.0/2)
+
+#returns list of "num" random robots     
+def randRobots(num):
+     rlist = []
+     for i in range(num):
+          rlist += [Robot(i, random.random(), random.random())]
+     return rlist
      
+#increases or decreases visibility     
+def changeVis(rlist, d):
+     newList = []
+     for rob in rlist:
+          rob.vis += d
+          newList += [rob]
+     return newList
+
+#moves robots in rlist uniformly randomly within bounded box
 def randomStep(rlist, xlo, xhi, ylo, yhi):
      for rob in rlist:
           dx = (2*random.random() - 1)
           dy = (2*random.random() - 1)
-          dist = (dx**2 + dy**2)**(1.0/2)
+          dist = (2)**(1.0/2)
           dx /= dist
           dy /= dist
           rob.x += dx * rob.maxSpeed
