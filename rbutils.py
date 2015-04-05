@@ -10,6 +10,16 @@ class Robot:
           self.maxSpeed = maxSpeed 
           self.nearSame = []
           self.nearOther = []
+          self.goalList = []
+          
+     def addGoal(loc):
+          self.goalList += [loc]
+          
+     def setGoal(loc):
+          self.goalList = [loc]
+          
+     def clearGoals():
+          self.goalList = []
 
 #return distance between two robots
 def dist(r1, r2):
@@ -29,6 +39,19 @@ def changeVis(rlist, d):
           rob.vis += d
           newList += [rob]
      return newList
+     
+#maintains list of nearest neighbors
+def updateNearestNeighbors(blueRobots, redRobots):
+     for blue in blueRobots:
+          blue.nearSame = []
+          for other in blueRobots:
+               if other != blue and dist(blue, other) < blue.vis:
+                    blue.nearSame += [other]
+     for blue in blueRobots:
+          blue.nearOther = []
+          for other in redRobots:
+               if dist(blue, other) < blue.vis:
+                    blue.nearOther += [other]
 
 #moves robots in rlist uniformly randomly within bounded box
 def randomStep(rlist, xlo, xhi, ylo, yhi):

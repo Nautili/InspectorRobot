@@ -2,6 +2,7 @@
 # The first half is just boiler-plate stuff...
 
 import pygame
+from pygame.locals import *
 import random
 import rbutils
 
@@ -26,10 +27,11 @@ class SceneBase:
 
 def run_game(width, height, fps, starting_scene):
      pygame.init()
-     screen = pygame.display.set_mode((width, height))
+     screen = pygame.display.set_mode((width, height),RESIZABLE)
      clock = pygame.time.Clock()
 
      active_scene = starting_scene
+     paused = False
 
      while active_scene != None:
           pressed_keys = pygame.key.get_pressed()
@@ -47,6 +49,11 @@ def run_game(width, height, fps, starting_scene):
                          quit_attempt = True
                     elif event.key == pygame.K_F4 and alt_pressed:
                          quit_attempt = True
+                    if event.key == pygame.K_p:
+                         paused = not paused
+               elif event.type==VIDEORESIZE:
+                    screen=pygame.display.set_mode(event.dict['size'],RESIZABLE)
+                    pygame.display.flip()
             
                if quit_attempt:
                     active_scene.Terminate()
@@ -54,7 +61,8 @@ def run_game(width, height, fps, starting_scene):
                     filtered_events.append(event)
         
           active_scene.ProcessInput(filtered_events, pressed_keys)
-          active_scene.Update()
+          if not paused:
+               active_scene.Update()
           active_scene.Render(screen)
              
           active_scene = active_scene.next
@@ -78,25 +86,17 @@ class RobotScene(SceneBase):
                     self.showRed = not self.showRed
                if event.type == pygame.KEYDOWN and event.key == pygame.K_b:
                     self.showBlue = not self.showBlue
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+               if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                     self.redRobots = rbutils.randRobots(len(self.redRobots))
                     self.blueRobots = rbutils.randRobots(len(self.blueRobots))
+                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
                if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
                     self.blueRobots = rbutils.changeVis(self.blueRobots, 0.01)
                if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
                     self.blueRobots = rbutils.changeVis(self.blueRobots, -0.01)
         
      def Update(self):
-          for blue in self.blueRobots:
-               blue.nearSame = []
-               for other in self.blueRobots:
-                    if other != blue and rbutils.dist(blue, other) < blue.vis:
-                         blue.nearSame += [other]
-          for blue in self.blueRobots:
-               blue.nearOther = []
-               for other in self.redRobots:
-                    if rbutils.dist(blue, other) < blue.vis:
-                         blue.nearOther += [other]
+          rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
           self.updater(self.redRobots, 0, 1, 0, 1)
     
      def Render(self, screen):
@@ -105,9 +105,10 @@ class RobotScene(SceneBase):
           egg = (235, 235, 211)
           black = (0, 0, 0)
           
-          screen.fill(egg)
           radius = 4
           lineWidth = 1
+          
+          screen.fill(egg)
 
           for rr in self.redRobots:
                newx = int(rr.x * screen.get_width())
@@ -128,5 +129,6 @@ class RobotScene(SceneBase):
                          oy = int(nn.y * screen.get_height())
                          pygame.draw.line(screen, black, (newx, newy), (ox, oy), lineWidth)
                pygame.draw.circle(screen, aqua, (newx, newy), radius)
+               
 
 run_game(400, 300, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
