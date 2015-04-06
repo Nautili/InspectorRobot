@@ -18,4 +18,17 @@ Exit using Alt + Esc or Alt + F4 (or the exit button).
 "Down" decreases visibility for the blue robots.
 "Left" increases visibility for the red robots.
 "Right" decreases visibility for the red robots.
+"O" Begins and ends printing to file.
+
+File is named "[updater name][date created]"
+File is formated
+"[updater name],[num red],[num blue]
+[red
+id,x,y,vis,maxspeed
+[num red neighbors],[list of red neighbors id,x,y]
+[num blue neighbors],[list of blue neighbors id,x,y]
+blue
+id,x,y,vis,maxspeed
+[num red neighbors],[list of red neighbors id,x,y]
+[num blue neighbors],[list of blue neighbors id,x,y]] (repeating at each time step)"
 

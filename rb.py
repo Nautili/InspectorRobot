@@ -5,6 +5,7 @@ import pygame
 from pygame.locals import *
 from pygame import gfxdraw
 import random
+import datetime
 import rbutils
 
 class SceneBase:
@@ -83,6 +84,8 @@ class RobotScene(SceneBase):
           if self.isGoal:
                rbutils.setGoals(self.redRobots)
           self.updater = updater
+          self.isPrinting = False
+          self.curFile = ''
     
      def ProcessInput(self, events, pressed_keys):
           for event in events:
@@ -90,6 +93,14 @@ class RobotScene(SceneBase):
                     self.showRed = not self.showRed
                if event.type == pygame.KEYDOWN and event.key == pygame.K_b:
                     self.showBlue = not self.showBlue
+               if event.type == pygame.KEYDOWN and event.key == pygame.K_o:
+                    self.isPrinting = not self.isPrinting
+                    if self.isPrinting:
+                         updaterName = self.updater.__name__
+                         fname = updaterName + datetime.datetime.now().strftime('%y_%m_%d-%H_%M_%S')
+                         fname += '.csv'
+                         self.curFile = fname
+                         rbutils.printStartState(fname, updaterName, self.redRobots, self.blueRobots)
                if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                     rbutils.randomizeRobots(self.redRobots)
                     rbutils.randomizeRobots(self.blueRobots)
@@ -110,6 +121,8 @@ class RobotScene(SceneBase):
      def Update(self):
           rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
           self.updater(self.redRobots, 0, 1, 0, 1)
+          if self.isPrinting:
+               rbutils.printState(self.curFile,self.blueRobots,self.redRobots)
     
      def Render(self, screen):
           red = (215, 40, 60)
@@ -160,7 +173,13 @@ class RobotScene(SceneBase):
                pygame.gfxdraw.aacircle(screen, newx, newy, robRadius, red)               
                pygame.gfxdraw.filled_circle(screen, newx, newy, robRadius, red)
           
+          caption = 'Inspectors'
+          if self.isPrinting:
+               caption += ' (Printing to file)'
+          pygame.display.set_caption(caption)
+          
+          
 
 #run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
-#run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.resourceCollector, True))
-run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.disperse))
+run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.resourceCollector, True))
+#run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.disperse))

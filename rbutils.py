@@ -59,6 +59,52 @@ def setGoals(rlist):
      for rob in rlist:
           start = int(random.random() * len(goalList))
           rob.setGoalList(goalList[start:] + goalList[:start])
+
+#prints particular robot information
+def printRobots(rlist):
+     output = ''
+     for rob in rlist:
+          output += str(rob.rid) + ','
+          output += str(rob.x) + ','
+          output += str(rob.y) + ','
+          output += str(rob.vis) + ','
+          output += str(rob.maxSpeed) + '\n'
+          
+          output += str(len(rob.nearSame)) + ','         
+          sameOut = ''
+          for same in rob.nearSame:
+               sameOut += str(same.rid) + ','
+               sameOut += str(same.x) + ','
+               sameOut += str(same.y) + ','
+          output += sameOut[:-1] + '\n'
+          
+          output += str(len(rob.nearOther)) + ','
+          otherOut = ''
+          for other in rob.nearOther:
+               otherOut += str(other.rid) + ','
+               otherOut += str(other.x) + ','
+               otherOut += str(other.y) + ','
+          output += otherOut[:-1] + '\n'
+     return output
+          
+#print information about each robot
+def printState(fname, redList, blueList):
+     output = ''
+     output += 'red\n'
+     output += printRobots(redList)
+     output += 'blue\n'
+     output += printRobots(blueList)
+     f = open("Data/" + fname, "a")
+     f.write(output)
+     f.close()        
+          
+#print information about each robot and config information
+def printStartState(fname, updater, redList, blueList):
+     f = open("Data/" + fname, "a")
+     f.write(updater + ',' + 'red,' + str(len(redList)) + ',blue,' + str(len(blueList)) + '\n')
+     f.close()
+     printState(fname, redList, blueList)
+
      
 #randomizes position of each robot in list  
 def randomizeRobots(rlist):
