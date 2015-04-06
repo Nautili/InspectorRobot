@@ -136,4 +136,4 @@ class RobotScene(SceneBase):
                pygame.gfxdraw.filled_circle(screen, newx, newy, radius, aqua)
                
 
-run_game(400, 300, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
+run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
