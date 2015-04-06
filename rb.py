@@ -76,8 +76,8 @@ class RobotScene(SceneBase):
           
           self.showBlue = False
           self.showRed = False
-          self.redRobots = rbutils.randRobots(numRed)
-          self.blueRobots = rbutils.randRobots(numBlue)
+          self.redRobots = rbutils.initRobots(numRed)
+          self.blueRobots = rbutils.initRobots(numBlue)
           self.updater = updater
     
      def ProcessInput(self, events, pressed_keys):
@@ -87,13 +87,15 @@ class RobotScene(SceneBase):
                if event.type == pygame.KEYDOWN and event.key == pygame.K_b:
                     self.showBlue = not self.showBlue
                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    self.redRobots = rbutils.randRobots(len(self.redRobots))
-                    self.blueRobots = rbutils.randRobots(len(self.blueRobots))
+                    rbutils.randomizeRobots(self.redRobots)
+                    rbutils.randomizeRobots(self.blueRobots)
                     rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
                if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
                     self.blueRobots = rbutils.changeVis(self.blueRobots, 0.01)
+                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
                if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
                     self.blueRobots = rbutils.changeVis(self.blueRobots, -0.01)
+                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
         
      def Update(self):
           rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)

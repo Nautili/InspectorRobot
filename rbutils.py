@@ -20,18 +20,27 @@ class Robot:
           
      def clearGoals():
           self.goalList = []
+          
+     def randomizePosition(self):
+          self.x = random.random()
+          self.y = random.random()
 
 #return distance between two robots
 def dist(r1, r2):
      return ((r1.x - r2.x)**2 + (r1.y - r2.y)**2)**(1.0/2)
 
 #returns list of "num" random robots     
-def randRobots(num):
+def initRobots(num):
      rlist = []
      for i in range(num):
           rlist += [Robot(i, random.random(), random.random())]
      return rlist
      
+#randomizes position of each robot in list  
+def randomizeRobots(rlist):
+     for rob in rlist:
+          rob.randomizePosition()
+          
 #increases or decreases visibility     
 def changeVis(rlist, d):
      newList = []
