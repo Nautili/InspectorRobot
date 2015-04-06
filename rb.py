@@ -1,3 +1,5 @@
+# Author: Ryan Lear
+# Contact: lear.vg(at)gmail.com
 # Scene code from http://www.nerdparadise.com/tech/python/pygame/basics/part7/
 # The first half is just boiler-plate stuff...
 
@@ -50,7 +52,7 @@ def run_game(width, height, fps, starting_scene):
                          quit_attempt = True
                     elif event.key == pygame.K_F4 and alt_pressed:
                          quit_attempt = True
-                    if event.key == pygame.K_p:
+                    if event.key == pygame.K_SPACE:
                          paused = not paused
                elif event.type==VIDEORESIZE:
                     screen=pygame.display.set_mode(event.dict['size'],RESIZABLE)
@@ -72,13 +74,16 @@ def run_game(width, height, fps, starting_scene):
           clock.tick(fps)
 
 class RobotScene(SceneBase):
-     def __init__(self, numRed, numBlue, blueVision, updater):
+     def __init__(self, numRed, numBlue, blueVision, updater, isGoal = False):
           SceneBase.__init__(self)
           
           self.showBlue = False
           self.showRed = False
+          self.isGoal = isGoal
           self.redRobots = rbutils.initRobots(numRed)
           self.blueRobots = rbutils.initRobots(numBlue)
+          if self.isGoal:
+               rbutils.setGoals(self.redRobots)
           self.updater = updater
     
      def ProcessInput(self, events, pressed_keys):
@@ -87,7 +92,7 @@ class RobotScene(SceneBase):
                     self.showRed = not self.showRed
                if event.type == pygame.KEYDOWN and event.key == pygame.K_b:
                     self.showBlue = not self.showBlue
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+               if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                     rbutils.randomizeRobots(self.redRobots)
                     rbutils.randomizeRobots(self.blueRobots)
                     rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
@@ -97,6 +102,12 @@ class RobotScene(SceneBase):
                if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
                     self.blueRobots = rbutils.changeVis(self.blueRobots, -0.01)
                     rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
+               if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
+                    self.redRobots = rbutils.changeVis(self.redRobots, 0.01)
+                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
+               if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
+                    self.redRobots = rbutils.changeVis(self.redRobots, -0.01)
+                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
         
      def Update(self):
           rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
@@ -105,10 +116,12 @@ class RobotScene(SceneBase):
      def Render(self, screen):
           red = (215, 40, 60)
           aqua = (0, 140, 255)
-          egg = (235, 235, 211)
+          mint = (120, 210, 170)
+          egg = (225, 235, 215)
           black = (0, 0, 0)
           
-          radius = 4
+          robRadius = 4
+          goalRadius = 6
           lineWidth = 1
           
           screen.fill(egg)
@@ -127,21 +140,29 @@ class RobotScene(SceneBase):
                          ox = int(nn.x * screen.get_width())
                          oy = int(nn.y * screen.get_height())
                          pygame.draw.aaline(screen, black, (newx, newy), (ox, oy), lineWidth)
-           
+          #draw goals
+          #assumes goals are same for all robots
+          if self.isGoal:
+               for g in self.redRobots[0].getGoalList():
+                    newx = int(g.x * screen.get_width())
+                    newy = int(g.y * screen.get_height())       
+                    pygame.gfxdraw.aacircle(screen, newx, newy, goalRadius, mint)               
+                    pygame.gfxdraw.filled_circle(screen, newx, newy, goalRadius, mint)
+                               
           #draw robots
           for br in self.blueRobots:               
                newx = int(br.x * screen.get_width())
                newy = int(br.y * screen.get_height())          
-               pygame.gfxdraw.aacircle(screen, newx, newy, radius, aqua)               
-               pygame.gfxdraw.filled_circle(screen, newx, newy, radius, aqua)
+               pygame.gfxdraw.aacircle(screen, newx, newy, robRadius, aqua)               
+               pygame.gfxdraw.filled_circle(screen, newx, newy, robRadius, aqua)
                
           for rr in self.redRobots:
                newx = int(rr.x * screen.get_width())
                newy = int(rr.y * screen.get_height())       
-               pygame.gfxdraw.aacircle(screen, newx, newy, radius, red)               
-               pygame.gfxdraw.filled_circle(screen, newx, newy, radius, red)
+               pygame.gfxdraw.aacircle(screen, newx, newy, robRadius, red)               
+               pygame.gfxdraw.filled_circle(screen, newx, newy, robRadius, red)
+          
 
-
-               
-
-run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
+#run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
+#run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.resourceCollector, True))
+run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.disperse))
