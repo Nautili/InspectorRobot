@@ -1,6 +1,3 @@
-# Author: Ryan Lear
-# Contact: lear.vg(at)gmail.com
-
 import random
 
 #contains class information for individual robots
@@ -154,9 +151,9 @@ def disperse(rlist, xlo, xhi, ylo, yhi):
                     rob.y -= dy * rob.maxSpeed
                     #addNoise(rob, rob.maxSpeed, rob.noise)
                     
-                    if rob.x < xlo: rob.x = xlo
-                    if rob.x > xhi: rob.x = xhi
-                    if rob.y < ylo: rob.y = ylo
-                    if rob.y > yhi: rob.y = yhi
+               if rob.x < xlo: rob.x = xlo
+               if rob.x > xhi: rob.x = xhi
+               if rob.y < ylo: rob.y = ylo
+               if rob.y > yhi: rob.y = yhi
                
           
