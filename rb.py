@@ -3,6 +3,7 @@
 
 import pygame
 from pygame.locals import *
+from pygame import gfxdraw
 import random
 import rbutils
 
@@ -114,8 +115,9 @@ class RobotScene(SceneBase):
 
           for rr in self.redRobots:
                newx = int(rr.x * screen.get_width())
-               newy = int(rr.y * screen.get_height())               
-               pygame.draw.circle(screen, red, (newx, newy), radius)
+               newy = int(rr.y * screen.get_height())       
+               pygame.gfxdraw.aacircle(screen, newx, newy, radius, red)               
+               pygame.gfxdraw.filled_circle(screen, newx, newy, radius, red)
           for br in self.blueRobots:
                newx = int(br.x * screen.get_width())
                newy = int(br.y * screen.get_height())
@@ -124,13 +126,14 @@ class RobotScene(SceneBase):
                     for nn in br.nearSame:
                          ox = int(nn.x * screen.get_width())
                          oy = int(nn.y * screen.get_height())
-                         pygame.draw.line(screen, black, (newx, newy), (ox, oy), lineWidth)
+                         pygame.draw.aaline(screen, black, (newx, newy), (ox, oy), lineWidth)
                if self.showRed:
                     for nn in br.nearOther:
                          ox = int(nn.x * screen.get_width())
                          oy = int(nn.y * screen.get_height())
-                         pygame.draw.line(screen, black, (newx, newy), (ox, oy), lineWidth)
-               pygame.draw.circle(screen, aqua, (newx, newy), radius)
+                         pygame.draw.aaline(screen, black, (newx, newy), (ox, oy), lineWidth)
+               pygame.gfxdraw.aacircle(screen, newx, newy, radius, aqua)               
+               pygame.gfxdraw.filled_circle(screen, newx, newy, radius, aqua)
                
 
 run_game(400, 300, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
