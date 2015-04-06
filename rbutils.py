@@ -74,16 +74,16 @@ def printRobots(rlist):
           sameOut = ''
           for same in rob.nearSame:
                sameOut += str(same.rid) + ','
-               sameOut += str(same.x) + ','
-               sameOut += str(same.y) + ','
+               #sameOut += str(same.x) + ','
+               #sameOut += str(same.y) + ','
           output += sameOut[:-1] + '\n'
           
           output += str(len(rob.nearOther)) + ','
           otherOut = ''
           for other in rob.nearOther:
                otherOut += str(other.rid) + ','
-               otherOut += str(other.x) + ','
-               otherOut += str(other.y) + ','
+               #otherOut += str(other.x) + ','
+               #otherOut += str(other.y) + ','
           output += otherOut[:-1] + '\n'
      return output
           
