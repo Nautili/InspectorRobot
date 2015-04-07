@@ -88,47 +88,48 @@ class RobotScene(SceneBase):
     
      def ProcessInput(self, events, pressed_keys):
           for event in events:
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
-                    self.showRed = not self.showRed
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_b:
-                    self.showBlue = not self.showBlue
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_o:
-                    self.isPrinting = not self.isPrinting
-                    if self.isPrinting:
-                         updaterName = self.updater.__name__
-                         fname = updaterName + datetime.datetime.now().strftime('%y_%m_%d-%H_%M_%S')
-                         fname += '.csv'
-                         self.curFile = fname
-                         rbutils.printStartState(fname, updaterName, self.redRobots, self.blueRobots)
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                    rbutils.randomizeRobots(self.redRobots)
-                    rbutils.randomizeRobots(self.blueRobots)
-                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
-                    self.blueRobots = rbutils.changeVis(self.blueRobots, 0.01)
-                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
-                    self.blueRobots = rbutils.changeVis(self.blueRobots, -0.01)
-                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT:
-                    self.redRobots = rbutils.changeVis(self.redRobots, 0.01)
-                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
-                    self.redRobots = rbutils.changeVis(self.redRobots, -0.01)
-                    rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
+               if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_r:
+                         self.showRed = not self.showRed
+                    if event.key == pygame.K_b:
+                         self.showBlue = not self.showBlue
+                    if event.key == pygame.K_o:
+                         self.isPrinting = not self.isPrinting
+                         if self.isPrinting:
+                              updaterName = self.updater.__name__
+                              fname = updaterName + datetime.datetime.now().strftime('%y_%m_%d-%H_%M_%S')
+                              fname += '.csv'
+                              self.curFile = fname
+                              rbutils.printStartState(fname, updaterName, self.redRobots, self.blueRobots)
+                    if event.key == pygame.K_RETURN:
+                         rbutils.randomizeRobots(self.redRobots)
+                         rbutils.randomizeRobots(self.blueRobots)
+                         rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
+                    if event.key == pygame.K_UP:
+                         self.blueRobots = rbutils.changeVis(self.blueRobots, 0.01)
+                         rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
+                    if event.key == pygame.K_DOWN:
+                         self.blueRobots = rbutils.changeVis(self.blueRobots, -0.01)
+                         rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
+                    if event.key == pygame.K_RIGHT:
+                         self.redRobots = rbutils.changeVis(self.redRobots, 0.01)
+                         rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
+                    if event.key == pygame.K_LEFT:
+                         self.redRobots = rbutils.changeVis(self.redRobots, -0.01)
+                         rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
                
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_1:
-                    self.updater = rbutils.randomStep
-                    self.isPrinting = False
-                    self.isGoal = False
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_2:
-                    self.updater = rbutils.resourceCollector
-                    self.isPrinting = False
-                    self.isGoal = True
-               if event.type == pygame.KEYDOWN and event.key == pygame.K_3:
-                    self.updater = rbutils.disperse
-                    self.isPrinting = False
-                    self.isGoal = False
+                    if event.key == pygame.K_1:
+                         self.updater = rbutils.randomStep
+                         self.isPrinting = False
+                         self.isGoal = False
+                    if event.key == pygame.K_2:
+                         self.updater = rbutils.resourceCollector
+                         self.isPrinting = False
+                         self.isGoal = True
+                    if event.key == pygame.K_3:
+                         self.updater = rbutils.disperse
+                         self.isPrinting = False
+                         self.isGoal = False
         
      def Update(self):
           rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
