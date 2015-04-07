@@ -81,8 +81,7 @@ class RobotScene(SceneBase):
           self.isGoal = isGoal
           self.redRobots = rbutils.initRobots(numRed)
           self.blueRobots = rbutils.initRobots(numBlue)
-          if self.isGoal:
-               rbutils.setGoals(self.redRobots)
+          rbutils.setGoals(self.redRobots)
           self.updater = updater
           self.isPrinting = False
           self.curFile = ''
@@ -117,6 +116,19 @@ class RobotScene(SceneBase):
                if event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT:
                     self.redRobots = rbutils.changeVis(self.redRobots, -0.01)
                     rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
+               
+               if event.type == pygame.KEYDOWN and event.key == pygame.K_1:
+                    self.updater = rbutils.randomStep
+                    self.isPrinting = False
+                    self.isGoal = False
+               if event.type == pygame.KEYDOWN and event.key == pygame.K_2:
+                    self.updater = rbutils.resourceCollector
+                    self.isPrinting = False
+                    self.isGoal = True
+               if event.type == pygame.KEYDOWN and event.key == pygame.K_3:
+                    self.updater = rbutils.disperse
+                    self.isPrinting = False
+                    self.isGoal = False
         
      def Update(self):
           rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
@@ -180,6 +192,6 @@ class RobotScene(SceneBase):
           
           
 
-#run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
-run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.resourceCollector, True))
+run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
+#run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.resourceCollector, True))
 #run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.disperse))
