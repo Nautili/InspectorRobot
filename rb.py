@@ -5,6 +5,7 @@ import pygame
 from pygame.locals import *
 from pygame import gfxdraw
 import random
+import os
 import datetime
 import rbutils
 
@@ -94,13 +95,16 @@ class RobotScene(SceneBase):
                     if event.key == pygame.K_b:
                          self.showBlue = not self.showBlue
                     if event.key == pygame.K_o:
-                         self.isPrinting = not self.isPrinting
-                         if self.isPrinting:
-                              updaterName = self.updater.__name__
-                              fname = updaterName + datetime.datetime.now().strftime('%y_%m_%d-%H_%M_%S')
-                              fname += '.csv'
-                              self.curFile = fname
-                              rbutils.printStartState(fname, updaterName, self.redRobots, self.blueRobots)
+                         if os.path.exists("Data"):
+                              self.isPrinting = not self.isPrinting
+                              if self.isPrinting:
+                                   updaterName = self.updater.__name__
+                                   fname = updaterName + datetime.datetime.now().strftime('%y_%m_%d-%H_%M_%S')
+                                   fname += '.csv'
+                                   self.curFile = fname
+                                   rbutils.printStartState(fname, updaterName, self.redRobots, self.blueRobots)
+                         else:
+                              print("Directory \"Data\" is missing. Create a folder in this directory called \"Data\" to save results.")
                     if event.key == pygame.K_RETURN:
                          rbutils.randomizeRobots(self.redRobots)
                          rbutils.randomizeRobots(self.blueRobots)
