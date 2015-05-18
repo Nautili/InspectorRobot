@@ -102,10 +102,11 @@ class RobotScene(SceneBase):
                                    fname = updaterName + datetime.datetime.now().strftime('%y_%m_%d-%H_%M_%S')
                                    fname += '.csv'
                                    self.curFile = fname
-                                   rbutils.printStartState(fname, updaterName, self.redRobots, self.blueRobots)
+                                   rbutils.printStartState(fname, updaterName, self.blueRobots, self.redRobots)
                          else:
                               print("Directory \"Data\" is missing. Create a folder in this directory called \"Data\" to save results.")
                     if event.key == pygame.K_RETURN:
+                         self.isPrinting = False
                          rbutils.randomizeRobots(self.redRobots)
                          rbutils.randomizeRobots(self.blueRobots)
                          rbutils.updateNearestNeighbors(self.blueRobots, self.redRobots)
@@ -132,6 +133,10 @@ class RobotScene(SceneBase):
                          self.isGoal = True
                     if event.key == pygame.K_3:
                          self.updater = rbutils.disperse
+                         self.isPrinting = False
+                         self.isGoal = False
+                    if event.key == pygame.K_4:
+                         self.updater = rbutils.static
                          self.isPrinting = False
                          self.isGoal = False
         
@@ -196,7 +201,7 @@ class RobotScene(SceneBase):
           pygame.display.set_caption(caption)
           
           
-
+#randomStep is run by default
 run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.randomStep))
 #run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.resourceCollector, True))
 #run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbutils.disperse))

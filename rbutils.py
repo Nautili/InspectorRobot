@@ -88,22 +88,22 @@ def printRobots(rlist):
      return output
           
 #print information about each robot
-def printState(fname, redList, blueList):
+def printState(fname, blueList, redList):
      output = ''
-     output += 'red\n'
-     output += printRobots(redList)
      output += 'blue\n'
      output += printRobots(blueList)
+     output += 'red\n'
+     output += printRobots(redList)
      f = open("Data/" + fname, "a")
      f.write(output)
      f.close()        
           
 #print information about each robot and config information
-def printStartState(fname, updater, redList, blueList):
+def printStartState(fname, updater, blueList, redList):
      f = open("Data/" + fname, "a")
-     f.write(updater + ',' + 'red,' + str(len(redList)) + ',blue,' + str(len(blueList)) + '\n')
+     f.write(updater + ',' + 'blue,' + str(len(blueList)) + ',red,' + str(len(redList)) + '\n')
      f.close()
-     printState(fname, redList, blueList)
+     printState(fname, blueList, redList)
 
      
 #randomizes position of each robot in list  
@@ -202,4 +202,6 @@ def disperse(rlist, xlo, xhi, ylo, yhi):
                if rob.y < ylo: rob.y = ylo
                if rob.y > yhi: rob.y = yhi
                
-          
+#identity - robots remain still
+def static(rlist, xlo, xhi, ylo, yhi):
+     return rlist
