@@ -1,8 +1,10 @@
 import pygame
 from pygame.locals import *
 from pygame import gfxdraw
+import numpy as np
 from os import walk
 import math
+import random
 
 blueCount = 0
 redCount = 0
@@ -15,6 +17,11 @@ class Edge:
           self.endPoint = point2
           self.time = time
 
+class MotionGraphs:
+    def __init__(self, numObserved, numObservers):
+        self.numVertices = numObservers
+        self.graph = [[] for i in range(numObserved)]
+
 def genGraph(file):
      f = open(file, 'r')
 
@@ -24,7 +31,7 @@ def genGraph(file):
      blueCount = int(metaSplit[2])
      redCount = int(metaSplit[4])
 
-     motionGraphs = [[] for i in range(redCount)]
+     motionGraphs = MotionGraphs(redCount, blueCount)
      next(f) #flush blue
 
      #Assume blue robots remain in the same position
@@ -73,13 +80,13 @@ def genGraph(file):
                     #update edge in motion graph
                     if blueRobot not in currentSightings[redRobot]: #if red robot is not seen by this blue robot, make new observation
                          for lastBlueSighting in currentSightings[redRobot]:
-                              motionGraphs[redRobot] += [Edge(lastBlueSighting, blueRobot, bluePositions[lastBlueSighting], bluePositions[blueRobot], time)]
+                              motionGraphs.graph[redRobot] += [Edge(lastBlueSighting, blueRobot, bluePositions[lastBlueSighting], bluePositions[blueRobot], time)]
 
           #add robots back in that are currently not seen
           for redRobot in range(redCount):
               if not newSightings[redRobot]: #if red robot not seen by anybody
                   newSightings[redRobot] = currentSightings[redRobot]
-                  
+
           currentSightings = newSightings #update to next time step
           next(f)
           for i in range(redCount*3): #skip through red data
@@ -131,7 +138,7 @@ def displayGraph(motionGraphs, blueRobots, graphsVisible):
           screen.fill(egg)
 
           for graphNum in graphsVisible:
-               for edge in motionGraphs[graphNum]:
+               for edge in motionGraphs.graph[graphNum]:
                     newStart = (edge.startPoint[0] * screen.get_width(), edge.startPoint[1] * screen.get_height())
                     newEnd = (edge.endPoint[0] * screen.get_width(), edge.endPoint[1] * screen.get_height())
                     pygame.draw.aaline(screen, black, newStart, newEnd, lineWidth)
@@ -172,57 +179,50 @@ def rotate(vec, r):
 def vecAdd(point, vec):
      return (point[0] + vec[0], point[1] + vec[1])
 
-def getDegreeStats(motionGraphs):
-     edges = [edge for subgraph in motionGraphs for edge in subgraph]
-     outDegree = [0 for i in range(blueCount)]
-     inDegree = [0 for i in range(blueCount)]
+def motionGraphToAdjMatrix(motionGraph, isDirected = True):
+    n = motionGraph.numVertices
+    adjMatrix = np.zeros((n,n), dtype=int)
+    edges = [edge for subgraph in motionGraph.graph for edge in subgraph]
+    for edge in edges:
+        adjMatrix[edge.startID,edge.endID] += 1
+        if not isDirected: #ensure symmetry
+            adjMatrix[edge.endID,edge.startID] += 1
+    return adjMatrix
 
-     maxTime = 1
-     times = [edge.time for edge in edges]
-     if len(times) > 0:
-          maxTime = max(times)
+def fourGraphletFeatures(mat, numSamples=10000):
+    numVertices = mat.shape[0]
+    #ensure that every possible set is included
+    featureDict = {frozenset([0]):0,
+                   frozenset([1]):0,
+                   frozenset([2]):0,
+                   frozenset([3]):0,
+                   frozenset([0,1]):0,
+                   frozenset([0,2]):0,
+                   frozenset([1,2]):0,
+                   frozenset([1,3]):0,
+                   frozenset([2,3]):0,
+                   frozenset([0,1,2]):0,
+                   frozenset([1,2,3]):0}
 
-     for edge in edges:
-          outDegree[edge.startID] += 1
-          inDegree[edge.endID] += 1
+    for sample in range(numSamples):
+        degCounts = [0,0,0,0]
+        sampVerts = random.sample(range(numVertices), 4)
+        for i in range(4):
+            for j in range(4):
+                if mat[sampVerts[i],sampVerts[j]] > 0:
+                    degCounts[j] += 1
+        degSet = frozenset(degCounts)
+        featureDict[degSet] += 1
+    featureList = []
+    for key in sorted(featureDict):
+        featureList += [featureDict[key] / numSamples]
+    print(np.array(featureList))
+    return np.array(featureList)
 
-     totalDegree = sum(outDegree)
-     avgDegree = totalDegree / len(outDegree)
 
-     varOut = 0
-     minOut = float("inf")
-     maxOut = 0
-     for degree in outDegree:
-          varOut += (degree - avgDegree)**2
-          if degree < minOut:
-               minOut = degree
-          if degree > maxOut:
-               maxOut = degree
-     varOut /= len(outDegree)
-
-     varIn = 0
-     minIn = float("inf")
-     maxIn = 0
-     for degree in inDegree:
-          varIn += (degree - avgDegree)**2
-          if degree < minIn:
-               minIn = degree
-          if degree > maxIn:
-               maxIn = degree
-     varIn /= len(inDegree)
-
-     retStats = (totalDegree, avgDegree, minOut, minIn, maxOut, maxIn, varOut, varIn)
-     return tuple(map(lambda x:x/maxTime, retStats))
-
-def treeClassify(stats, scaleFactor):
-     if stats[0] < 5:
-          return "static"
-     elif stats[6] / scaleFactor > 0.6:
-          return "resource collection"
-     elif stats[7] / scaleFactor < 0.3:
-          return "dispersion"
-     else:
-          return "random"
+#kernel takes two matrices and returns a kernel matrix
+def fourGraphletKernel(mat1, mat2):
+    kernelMat = np.zeros((mat1.shape[0], mat2.shape[0]), dtype=int)
 
 #----------------------------------------
 draw = True
@@ -263,5 +263,7 @@ if not draw:
 else:
 
      mg = genGraph(r'Data\resourceCollector15_05_18-08_54_20.csv')
+     adj = motionGraphToAdjMatrix(mg, False)
+     fourGraphletFeatures(adj)
      displayGraph(mg, bluePositions, list(range(redCount)))
      #displayGraph(mg, bluePositions, [0])
