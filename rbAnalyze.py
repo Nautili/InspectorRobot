@@ -192,6 +192,7 @@ def motionGraphToAdjMatrix(motionGraph, isDirected = True):
 def fourGraphletFeatures(mat, numSamples=10000):
     numVertices = mat.shape[0]
     #ensure that every possible set is included
+    #frozensets are hashable
     featureDict = {frozenset([0]):0,
                    frozenset([1]):0,
                    frozenset([2]):0,
@@ -225,45 +226,27 @@ def fourGraphletKernel(mat1, mat2):
     kernelMat = np.zeros((mat1.shape[0], mat2.shape[0]), dtype=int)
 
 #----------------------------------------
-draw = True
 
-if not draw:
-     f = []
-     for(path, dirs, files) in walk("Data\\Training"):
-          f.extend(files)
-          break
+def analyze(draw=True):
+    if not draw:
+         f = []
+         for(path, dirs, files) in walk("Data\\Graphs"):
+              f.extend(files)
+              break
 
-     stats = []
-     for file in f:
-          file = "Data\\Training\\" + file
-          mg = genGraph(file)
-          #print(file)
-          newStat = getDegreeStats(mg)
-          stats += [newStat]
+         stats = []
+         for file in f:
+              #get label from filename
+              label = file.split("_")[0].strip("0123456789")
+              file = "Data\\Graphs\\" + file
+              mg = genGraph(file)
+              #generate feature vectors
+              #form kernel matrix
+              #apply svm
+    else:
 
-     agg = [stats[i:i+10] for i in range(0,len(stats),10)]
-
-     groupStats = []
-     for group in agg:
-          groupStats += [tuple([sum(y) / len(y) for y in zip(*group)])]
-
-     scaleFactor = max([max(tup) for tup in groupStats])
-     if scaleFactor == 0:
-          scaleFactor = 1
-
-     for stat in groupStats:
-          print("(", end = "")
-          for val in stat:
-               print("%0.2f" % val, end = ", ")
-          print(")")
-          print (stat[6] / scaleFactor, stat[7] / scaleFactor)
-
-     for stat in stats:
-          print(treeClassify(stat, scaleFactor))
-else:
-
-     mg = genGraph(r'Data\resourceCollector15_05_18-08_54_20.csv')
-     adj = motionGraphToAdjMatrix(mg, False)
-     fourGraphletFeatures(adj)
-     displayGraph(mg, bluePositions, list(range(redCount)))
-     #displayGraph(mg, bluePositions, [0])
+         mg = genGraph(r'Data\resourceCollector15_05_18-08_54_20.csv')
+         adj = motionGraphToAdjMatrix(mg, False)
+         fourGraphletFeatures(adj)
+         displayGraph(mg, bluePositions, list(range(redCount)))
+         #displayGraph(mg, bluePositions, [0])
