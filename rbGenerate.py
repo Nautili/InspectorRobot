@@ -1,8 +1,9 @@
 import pygame
 from pygame.locals import *
 from pygame import gfxdraw
-from os import walk
+import os
 import math
+import pickle
 
 blueCount = 0
 redCount = 0
@@ -195,6 +196,17 @@ def vecAdd(point, vec):
 
 #-------------------------------------
 
+def serializeGraphs():
+    f = []
+    for(path, dirs, files) in os.walk("Data\\Graphs"):
+        f.extend(files)
+        break
+    for file in f:
+        print("Generating motion graph for file: ", file)
+        pickleFile = "Data\\Pickles\\mg\\" + os.path.splitext(file)[0] + ".p"
+        file = "Data\\Graphs\\" + file
+        mg = genGraph(file)
+        pickle.dump(mg, open(pickleFile, "wb"))
 
 def demo():
     mg = genGraph(r'Data\Graphs\resourceCollector15_05_18-08_54_20.csv')
