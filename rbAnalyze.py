@@ -37,7 +37,7 @@ def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
         degCounts = [0, 0, 0, 0]
         edgeCounts = {}
         sampVerts = random.sample(range(numVertices), 4)
-        #for each possibility of four verticecs
+        #for each possibility of four vertices
         for i in range(4):
             for j in range(4):
                 numEdges = mat[sampVerts[i], sampVerts[j]]
