@@ -81,7 +81,7 @@ def run_game(width, height, fps, starting_scene):
 
 class RobotScene(SceneBase):
 
-    def __init__(self, numRed, numBlue, blueVision, updater, isGoal=False):
+    def __init__(self, numBlue, numRed, updater, isGoal=False):
         SceneBase.__init__(self)
 
         self.showBlue = False
@@ -102,18 +102,19 @@ class RobotScene(SceneBase):
                 if event.key == pygame.K_b:
                     self.showBlue = not self.showBlue
                 if event.key == pygame.K_o:
-                    if os.path.exists("Data\\Graphs"):
+                    directory = "Data\\Graphs"
+                    if os.path.exists(directory):
                         self.isPrinting = not self.isPrinting
                         if self.isPrinting:
                             updaterName = self.updater.__name__
                             fname = updaterName + datetime.datetime.now().strftime('%y_%m_%d-%H_%M_%S')
-                            fname += '.csv'
+                            fname = directory + "\\" + fname + '.csv'
                             self.curFile = fname
                             rbUtils.printStartState(
                                 fname, updaterName, self.blueRobots, self.redRobots)
                     else:
                         print(
-                            "Directory \"Data\\Graphs\" is missing. Create a folder in this directory called \"Data\\Graphs\" to save results.")
+                            "Directory " + directory + " is missing. Create a folder in this directory called \"Data\\Graphs\" to save results.")
                 if event.key == pygame.K_RETURN:
                     self.isPrinting = False
                     rbUtils.randomizeRobots(self.redRobots)
@@ -161,6 +162,7 @@ class RobotScene(SceneBase):
     def Update(self):
         rbUtils.updateNearestNeighbors(self.blueRobots, self.redRobots)
         self.updater(self.redRobots)
+        print(self.redRobots[0].vis, self.blueRobots[0].vis)
         if self.isPrinting:
             rbUtils.printState(self.curFile, self.blueRobots, self.redRobots)
 
@@ -222,44 +224,64 @@ class RobotScene(SceneBase):
         pygame.display.set_caption(caption)
 
 
-class GeneratorScene(SceneBase):
+# Generate data for individual functions
+def generateFunctionData(updater, numBlue=80, numRed=80, numSamples=150, blueVis=0.2, redVis=0.11, directory="Data\\Test"):
+    blueRobots = rbUtils.initRobots(numBlue)
+    redRobots = rbUtils.initRobots(numRed)
+    rbUtils.setVis(blueRobots, blueVis)
+    rbUtils.setVis(redRobots, redVis)
+    rbUtils.setGoals(redRobots)
 
-    def __init__(self, numRed, numBlue, blueVision, updater, numSamples, isGoal=False):
-        SceneBase.__init__(self)
+    updaterName = updater.__name__
+    curFile = updaterName + datetime.datetime.now().strftime('%y_%m_%d-%H_%M_%S')
+    curFile = directory + '\\' + curFile + '.csv'
 
-        self.showBlue = False
-        self.showRed = False
-        self.isGoal = isGoal
-        self.redRobots = rbUtils.initRobots(numRed)
-        self.blueRobots = rbUtils.initRobots(numBlue)
-        rbUtils.setGoals(self.redRobots)
-        self.updater = updater
-        self.numSamples = numSamples
-        self.curFile = ''
+    print("Generating graph for " + str(updaterName) + " with numBlue=" + str(numBlue) + ", numRed=" +
+          str(numRed) + ", numSamples=" + str(numSamples) + ", blueVis=" + str(blueVis) + ", redVis=" + str(redVis))
+    rbUtils.printStartState(curFile, updaterName, blueRobots, redRobots)
 
-    def ProcessInput(self, events, pressed_keys):
-        pass  # no-op
-
-    def Update(self):
-        rbUtils.updateNearestNeighbors(self.blueRobots, self.redRobots)
-        self.updater(self.redRobots)
-        rbUtils.printState(self.curFile, self.blueRobots, self.redRobots)
-
-    def Render(self, screen):
-        pass  # no-op
+    for sample in range(numSamples):
+        rbUtils.updateNearestNeighbors(blueRobots, redRobots)
+        updater(redRobots)
+        rbUtils.printState(curFile, blueRobots, redRobots)
 
 
-# randomStep is run by default
-def runRB():
-    run_game(600, 600, 60, RobotScene(80, 80, 0.2, rbUtils.randomStep))
-
-#TODO: Find the proper ranges for each function
-#Vary the number of robots
-#Vary the range of vision
+# Generate all data for new graphs
 def generateData():
     funcList = [rbUtils.randomStep,
                 rbUtils.resourceCollector,
                 rbUtils.disperse,
+                rbUtils.contract,
                 rbUtils.static]
 
-    run_game(600, 600, 60, GeneratorScene(80, 80, 0.2, rbUtils.randomStep))
+    # vary number of robots
+    for func in funcList:
+        for numRobots in range(40, 140):
+            generateFunctionData(func, numBlue=numRobots,
+                                 directory="Data\\Graphs\\Robots")
+            generateFunctionData(func, numRed=numRobots,
+                                 directory="Data\\Graphs\\Robots")
+
+    # vary range of vision
+    for func in funcList:
+        blueVal = 0.05
+        redVal = 0.15
+        for val in range(10):
+            for samples in range(10):
+                generateFunctionData(func, blueVis=blueVal,
+                                     directory="Data\\Graphs\\Vision")
+                generateFunctionData(func, redVis=redVal,
+                                     directory="Data\\Graphs\\Vision")
+            blueVal += 0.01
+            redVal += 0.01
+
+    # vary number of samples
+    for func in funcList:
+        for numSamples in range(100, 600, 5):
+            generateFunctionData(func, numSamples=numSamples,
+                                 directory="Data\\Graphs\\Samples")
+
+
+# randomStep is run by default
+def runRB():
+    run_game(600, 600, 60, RobotScene(80, 80, rbUtils.randomStep))

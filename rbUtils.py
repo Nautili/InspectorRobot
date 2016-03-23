@@ -109,7 +109,7 @@ def printState(fname, blueList, redList):
     output += printRobots(blueList)
     output += 'red\n'
     output += printRobots(redList)
-    f = open("Data/" + fname, "a")
+    f = open(fname, "a")
     f.write(output)
     f.close()
 
@@ -117,7 +117,7 @@ def printState(fname, blueList, redList):
 
 
 def printStartState(fname, updater, blueList, redList):
-    f = open("Data/" + fname, "a")
+    f = open(fname, "a")
     f.write(updater + ',' + 'blue,' + str(len(blueList)) +
             ',red,' + str(len(redList)) + '\n')
     f.close()
@@ -138,6 +138,11 @@ def changeVis(rlist, d):
         rob.vis += d
         newList += [rob]
     return newList
+
+# set visibility for all robots
+def setVis(rlist, vis):
+    for rob in rlist:
+        rob.vis = vis
 
 # maintains list of nearest neighbors
 
