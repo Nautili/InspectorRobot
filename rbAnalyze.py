@@ -16,7 +16,53 @@ def motionGraphToAdjMatrix(motionGraph, isDirected=False):
             adjMatrix[edge.endID, edge.startID] += 1
     return adjMatrix
 
-#TODO: verify that summing logarithms is a valid technique
+
+def serializeGraphs():
+    f = []
+    for(path, dirs, files) in os.walk("Data\\Graphs"):
+        for fileName in files:
+            fullName = os.path.join(path, fileName)
+            f.append(fullName)
+    for fileName in f:
+        print("Generating motion graph for file: ", fileName)
+        mg = genGraph(fileName)
+        pickleFile = fileName.replace("Graphs", "Pickles")
+        pickleFile = os.path.splitext(pickleFile)[0] + ".p"
+        pickle.dump(mg, open(pickleFile, "wb"))
+
+
+def serializeAdjMats(dirToPopulate="Data\\Pickles\\AdjMats\\Undirected"):
+    sourceDir = "Data\\Pickles\\MotionGraphs"
+    f = []
+    for(path, dirs, files) in os.walk(sourceDir):
+        for fileName in files:
+            fullName = os.path.join(path, fileName)
+            f.append(fullName)
+
+    for fileName in f:
+        print("Generating adjacency matrix for file: ", fileName)
+        mg = pickle.load(open(fileName, "rb"))
+        mgMat = motionGraphToAdjMatrix(mg)
+        adjMatLocation = fileName.replace(sourceDir, dirToPopulate)
+        pickle.dump((mg.label, mgMat), open(adjMatLocation, "wb"))
+
+
+def serializeFeatVecs(dirToPopulate="Data\\Pickles\\FeatureVectors\\4Graphlet", kernelFunc=fourGraphletFeatures):
+    sourceDir = "Data\\Pickles\\AdjMats\\Undirected"
+    f = []
+    for(path, dirs, files) in os.walk(sourceDir):
+        for fileName in files:
+            fullName = os.path.join(path, fileName)
+            f.append(fullName)
+
+    for fileName in f:
+        print("Generating feature vector for file: ", fileName)
+        (label, mgMat) = pickle.load(open(fileName, "rb"))
+        featureVector = kernelFunc(mgMat)
+
+        featVecLocation = fileName.replace(sourceDir, dirToPopulate)
+        pickle.dump((featureVector, label), open(featVecLocation, "wb"))
+
 def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
     numVertices = mat.shape[0]
     # ensure that every possible set is included
@@ -63,22 +109,20 @@ def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
 
 #----------------------------------------
 
-def analyze():
+def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet"):
     f = []
-    for(path, dirs, files) in walk("Data\\Pickles"):
-        f.extend(files)
-        break
+    for(path, dirs, files) in walk(dirToAnalyze):
+        for fileName in files:
+            fullName = os.path.join(path, fileName)
+            f.append(fullName)
 
     featureVectors = []
-    labels = []
-    for file in f:
-        print("Generating features for file: ", file)
-        mg = pickle.load(open("Data\\Pickles\\" + file, "rb"))
-        mgMat = motionGraphToAdjMatrix(mg)
-        # print(mg.label)
-        # generate feature vectors
-        featureVectors += [fourGraphletFeatures(mgMat)]
-        labels += [mg.label]
+    labelArray = []
+    for fileName in f:
+        (featureVector, label) = pickle.load(open(fileName, "rb"))
+        featureVectors += [featureVector]
+        labelArray += [label]
+
     # apply svm
     featureArray = np.array(featureVectors)
     labelArray = np.array(labels)
@@ -93,4 +137,4 @@ def analyze():
     print("Confusion matrix:\n%s" %
           metrics.confusion_matrix(expected, predicted))
 
-analyze()
+#analyze("Data\\Pickles\\FeatureVectors\\4Graphlet\\590Testing")

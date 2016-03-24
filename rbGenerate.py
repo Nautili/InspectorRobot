@@ -4,6 +4,7 @@ from pygame import gfxdraw
 import os
 import math
 import pickle
+import rb
 
 blueCount = 0
 redCount = 0
@@ -27,8 +28,8 @@ class MotionGraphs:
         self.label = label
 
 
-def genGraph(file):
-    f = open(file, 'r')
+def genGraph(fileName):
+    f = open(fileName, 'r')
 
     metaSplit = f.readline().strip().split(",")
     global blueCount
@@ -196,17 +197,63 @@ def vecAdd(point, vec):
 
 #-------------------------------------
 
-def serializeGraphs():
-    f = []
-    for(path, dirs, files) in os.walk("Data\\Graphs"):
-        f.extend(files)
-        break
-    for file in f:
-        print("Generating motion graph for file: ", file)
-        pickleFile = "Data\\Pickles\\mg\\" + os.path.splitext(file)[0] + ".p"
-        file = "Data\\Graphs\\" + file
-        mg = genGraph(file)
-        pickle.dump(mg, open(pickleFile, "wb"))
+# Generate data for individual functions
+def generateFunctionData(updater, numBlue=80, numRed=80, numSamples=150, blueVis=0.2, redVis=0.11, directory="Data\\Test"):
+    blueRobots = rbUtils.initRobots(numBlue)
+    redRobots = rbUtils.initRobots(numRed)
+    rbUtils.setVis(blueRobots, blueVis)
+    rbUtils.setVis(redRobots, redVis)
+    rbUtils.setGoals(redRobots)
+
+    updaterName = updater.__name__
+    curFile = updaterName + datetime.datetime.now().strftime('%y_%m_%d-%H_%M_%S')
+    curFile = directory + '\\' + curFile + '.csv'
+
+    print("Generating graph for " + str(updaterName) + " with numBlue=" + str(numBlue) + ", numRed=" +
+          str(numRed) + ", numSamples=" + str(numSamples) + ", blueVis=" + str(blueVis) + ", redVis=" + str(redVis))
+    rbUtils.printStartState(curFile, updaterName, blueRobots, redRobots)
+
+    for sample in range(numSamples):
+        rbUtils.updateNearestNeighbors(blueRobots, redRobots)
+        updater(redRobots)
+        rbUtils.printState(curFile, blueRobots, redRobots)
+
+
+# Generate all data for new graphs
+def generateData():
+    funcList = [rbUtils.randomStep,
+                rbUtils.resourceCollector,
+                rbUtils.disperse,
+                rbUtils.contract,
+                rbUtils.static]
+
+    # vary number of robots
+    for func in funcList:
+        for numRobots in range(40, 140):
+            generateFunctionData(func, numBlue=numRobots,
+                                 directory="Data\\Graphs\\Robots\\BlueVaries")
+            generateFunctionData(func, numRed=numRobots,
+                                 directory="Data\\Graphs\\Robots\\RedVaries")
+
+    # vary range of vision
+    for func in funcList:
+        blueVal = 0.15
+        redVal = 0.06
+        for val in range(10):
+            for samples in range(10):
+                generateFunctionData(func, blueVis=blueVal,
+                                     directory="Data\\Graphs\\Vision\\BlueVaries")
+                generateFunctionData(func, redVis=redVal,
+                                     directory="Data\\Graphs\\Vision\\RedVaries")
+            blueVal += 0.01
+            redVal += 0.01
+
+    # vary number of samples
+    for func in funcList:
+        for numSamples in range(100, 600, 5):
+            generateFunctionData(func, numSamples=numSamples,
+                                 directory="Data\\Graphs\\Samples")
+
 
 def demo():
     mg = genGraph(r'Data\Graphs\resourceCollector15_05_18-08_54_20.csv')
