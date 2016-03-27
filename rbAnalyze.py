@@ -5,6 +5,50 @@ from os import walk
 
 from sklearn import svm, metrics
 
+def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
+    numVertices = mat.shape[0]
+    # ensure that every possible set is included
+    # frozensets are hashable
+    featureDict = {frozenset([0]): 0,
+                   frozenset([1]): 0,
+                   frozenset([2]): 0,
+                   frozenset([3]): 0,
+                   frozenset([0, 1]): 0,
+                   frozenset([0, 2]): 0,
+                   frozenset([1, 2]): 0,
+                   frozenset([1, 3]): 0,
+                   frozenset([2, 3]): 0,
+                   frozenset([0, 1, 2]): 0,
+                   frozenset([1, 2, 3]): 0}
+
+    for sample in range(numSamples):
+        degCounts = [0, 0, 0, 0]
+        edgeCounts = {}
+        sampVerts = random.sample(range(numVertices), 4)
+        #for each possibility of four vertices
+        for i in range(4):
+            for j in range(4):
+                numEdges = mat[sampVerts[i], sampVerts[j]]
+                if numEdges > 0:
+                    #initialize if not in dictionary
+                    if frozenset([i,j]) not in edgeCounts:
+                        edgeCounts[frozenset([i,j])] = 0
+                    edgeCounts[frozenset([i,j])] += numEdges
+                    degCounts[j] += 1
+        #Add weight for the number of graphs in a multigraph
+        numGraphs = 1
+        if multiCount:
+            numGraphs = 0
+            for val in edgeCounts.values():
+                numGraphs += np.log(val)
+        degSet = frozenset(degCounts)
+        featureDict[degSet] += numGraphs
+    featureList = []
+    for key in sorted(featureDict):
+        featureList += [featureDict[key]]
+    #print(featureList)
+    return featureList
+
 
 def motionGraphToAdjMatrix(motionGraph, isDirected=False):
     n = motionGraph.numVertices
@@ -63,53 +107,10 @@ def serializeFeatVecs(dirToPopulate="Data\\Pickles\\FeatureVectors\\4Graphlet", 
         featVecLocation = fileName.replace(sourceDir, dirToPopulate)
         pickle.dump((featureVector, label), open(featVecLocation, "wb"))
 
-def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
-    numVertices = mat.shape[0]
-    # ensure that every possible set is included
-    # frozensets are hashable
-    featureDict = {frozenset([0]): 0,
-                   frozenset([1]): 0,
-                   frozenset([2]): 0,
-                   frozenset([3]): 0,
-                   frozenset([0, 1]): 0,
-                   frozenset([0, 2]): 0,
-                   frozenset([1, 2]): 0,
-                   frozenset([1, 3]): 0,
-                   frozenset([2, 3]): 0,
-                   frozenset([0, 1, 2]): 0,
-                   frozenset([1, 2, 3]): 0}
-
-    for sample in range(numSamples):
-        degCounts = [0, 0, 0, 0]
-        edgeCounts = {}
-        sampVerts = random.sample(range(numVertices), 4)
-        #for each possibility of four vertices
-        for i in range(4):
-            for j in range(4):
-                numEdges = mat[sampVerts[i], sampVerts[j]]
-                if numEdges > 0:
-                    #initialize if not in dictionary
-                    if frozenset([i,j]) not in edgeCounts:
-                        edgeCounts[frozenset([i,j])] = 0
-                    edgeCounts[frozenset([i,j])] += numEdges
-                    degCounts[j] += 1
-        #Add weight for the number of graphs in a multigraph
-        numGraphs = 1
-        if multiCount:
-            numGraphs = 0
-            for val in edgeCounts.values():
-                numGraphs += np.log(val)
-        degSet = frozenset(degCounts)
-        featureDict[degSet] += numGraphs
-    featureList = []
-    for key in sorted(featureDict):
-        featureList += [featureDict[key]]
-    #print(featureList)
-    return featureList
-
 #----------------------------------------
 
 def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet"):
+    print("Loading feature vectors")
     f = []
     for(path, dirs, files) in walk(dirToAnalyze):
         for fileName in files:
@@ -117,16 +118,16 @@ def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet"):
             f.append(fullName)
 
     featureVectors = []
-    labelArray = []
+    labels= []
     for fileName in f:
         (featureVector, label) = pickle.load(open(fileName, "rb"))
         featureVectors += [featureVector]
-        labelArray += [label]
+        labels += [label]
 
     # apply svm
     featureArray = np.array(featureVectors)
     labelArray = np.array(labels)
-
+    print("Learning...")
     classifier = svm.SVC(kernel='linear', gamma=0.001)
     classifier.fit(featureArray[::2], labelArray[::2])
     expected = labelArray[1::2]

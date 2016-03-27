@@ -9,37 +9,14 @@ import os
 import datetime
 import rbUtils
 
-
-class SceneBase:
-
-    def __init__(self):
-        self.next = self
-
-    def ProcessInput(self, events, pressed_keys):
-        print("uh-oh, you didn't override this in the child class")
-
-    def Update(self):
-        print("uh-oh, you didn't override this in the child class")
-
-    def Render(self, screen):
-        print("uh-oh, you didn't override this in the child class")
-
-    def SwitchToScene(self, next_scene):
-        self.next = next_scene
-
-    def Terminate(self):
-        self.SwitchToScene(None)
-
-
-def run_game(width, height, fps, starting_scene):
+def run_game(width, height, fps, active_scene):
     pygame.init()
     screen = pygame.display.set_mode((width, height), RESIZABLE)
     clock = pygame.time.Clock()
 
-    active_scene = starting_scene
     paused = False
 
-    while active_scene != None:
+    while True:
         pressed_keys = pygame.key.get_pressed()
 
         # Event filtering
@@ -62,7 +39,6 @@ def run_game(width, height, fps, starting_scene):
                 pygame.display.flip()
 
             if quit_attempt:
-                active_scene.Terminate()
                 pygame.quit()
                 return
             else:
@@ -73,17 +49,13 @@ def run_game(width, height, fps, starting_scene):
             active_scene.Update()
         active_scene.Render(screen)
 
-        active_scene = active_scene.next
-
         pygame.display.flip()
         clock.tick(fps)
 
 
-class RobotScene(SceneBase):
+class RedBlue():
 
     def __init__(self, numBlue, numRed, updater, isGoal=False):
-        SceneBase.__init__(self)
-
         self.showBlue = False
         self.showRed = False
         self.isGoal = isGoal
@@ -162,7 +134,7 @@ class RobotScene(SceneBase):
     def Update(self):
         rbUtils.updateNearestNeighbors(self.blueRobots, self.redRobots)
         self.updater(self.redRobots)
-        print(self.redRobots[0].vis, self.blueRobots[0].vis)
+        #print(self.redRobots[0].vis, self.blueRobots[0].vis)
         if self.isPrinting:
             rbUtils.printState(self.curFile, self.blueRobots, self.redRobots)
 
@@ -226,4 +198,4 @@ class RobotScene(SceneBase):
 
 # randomStep is run by default
 def runRB():
-    run_game(600, 600, 60, RobotScene(80, 80, rbUtils.randomStep))
+    run_game(600, 600, 60, RedBlue(80, 80, rbUtils.randomStep))
