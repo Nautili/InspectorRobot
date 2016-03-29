@@ -4,7 +4,6 @@ from pygame import gfxdraw
 import os
 import math
 import pickle
-import rb
 
 blueCount = 0
 redCount = 0
@@ -256,6 +255,6 @@ def generateData():
 
 
 def demo():
-    mg = genGraph(r'Data\Graphs\resourceCollector15_05_18-08_54_20.csv')
+    mg = genGraph(r'Data\\Graphs\\590Testing\\resourceCollector15_05_18-08_54_20.csv')
     displayGraph(mg, bluePositions, list(range(redCount)))
     #displayGraph(mg, bluePositions, [0])

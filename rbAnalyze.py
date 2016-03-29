@@ -4,6 +4,7 @@ import random
 from os import walk
 
 from sklearn import svm, metrics
+import matplotlib.pyplot as plt
 
 def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
     numVertices = mat.shape[0]
@@ -109,8 +110,75 @@ def serializeFeatVecs(dirToPopulate="Data\\Pickles\\FeatureVectors\\4Graphlet", 
 
 #----------------------------------------
 
-def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet"):
-    print("Loading feature vectors")
+#TODO: Make this do things
+#Create and export bar graph of ranges
+def genBarGraph():
+    mu, sigma = 100, 15
+    x = mu + sigma * np.random.randn(10000)
+
+    # the histogram of the data
+    n, bins, patches = plt.hist(x, 50, normed=1, facecolor='g', alpha=0.75)
+    plt.xlabel('Smarts')
+    plt.ylabel('Probability')
+    plt.title('Histogram of IQ')
+    plt.text(60, .025, r'$\mu=100,\ \sigma=15$')
+    plt.axis([40, 160, 0, 0.03])
+    plt.grid(True)
+    plt.show()
+
+def genConfMatGraphic(cm, labels, title='Confusion matrix', cmap=plt.cm.OrRd):
+    plt.imshow(cm, interpolation='nearest', cmap=cmap)
+    plt.title(title)
+    plt.colorbar()
+    tick_marks = np.arange(len(labels))
+    plt.xticks(tick_marks, labels, rotation=45)
+    plt.yticks(tick_marks, labels)
+    plt.tight_layout()
+    plt.ylabel('True label')
+    plt.xlabel('Predicted label')
+
+def saveConfMat(fileToAnalyze):
+    labels = []
+    cm = []
+    f = open(fileToAnalyze)
+    lines = list(f)
+
+    labelStart = 6
+    numLabels = 0
+    while lines[labelStart + numLabels] != "\n":
+        labels.append(lines[labelStart + numLabels].split()[0])
+        numLabels += 1
+
+    cmStart = labelStart + numLabels + 5 #magic number defined by file format
+    cm = lines[cmStart:cmStart+numLabels]
+    cm = [[int(val) for val in line.strip(" []\n").split()] for line in cm]
+    cm = np.array(cm)
+
+    cm_normalized = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    fileName = os.path.splitext(fileToAnalyze)[0]
+    dirToSave = fileName.replace("Results", "Graphics") + ".png"
+    fileName = os.path.basename(fileName)
+
+    plt.figure()
+    genConfMatGraphic(cm_normalized, labels, fileName)
+    #plt.show()
+    plt.savefig(dirToSave,bbox_inches="tight")
+
+
+def generateCFGraphics(rootDir="Results\\4Graphlet"):
+    f = []
+    for(path, dirs, files) in walk(rootDir):
+        for fileName in files:
+            fullName = os.path.join(path, fileName)
+            if "EP.txt" not in fullName:
+                f.append(fullName)
+    for fileName in f:
+        print("Generating confusion matrix graphic for ", fileName)
+        saveConfMat(fileName)
+
+
+def retrieveFeatures(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet"):
+    print("Loading feature vectors for", dirToAnalyze)
     f = []
     for(path, dirs, files) in walk(dirToAnalyze):
         for fileName in files:
@@ -127,15 +195,41 @@ def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet"):
     # apply svm
     featureArray = np.array(featureVectors)
     labelArray = np.array(labels)
+    return (featureArray, labelArray)
+
+
+def generateClassifier(featureArray, labelArray):
     print("Learning...")
     classifier = svm.SVC(kernel='linear', gamma=0.001)
     classifier.fit(featureArray[::2], labelArray[::2])
+    return classifier
+
+
+def pickleClassifier(classifier, pickleLocation="Data\\Pickles\\Classifiers\\all.txt"):
+    pickle.dump(classifier, open(pickleLocation, "wb"))
+    print("Classifier serialized")
+
+
+def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet", classifierLocation=""):
+    featureArray, labelArray = retrieveFeatures(dirToAnalyze)
+    #Interleaved testing and training
+    if classifierLocation == "":
+        classifier = generateClassifier(featureArray, labelArray)
+    else: #test using generated classifier
+        classifier = pickle.load(open(classifierLocation, "rb"))
+
     expected = labelArray[1::2]
     predicted = classifier.predict(featureArray[1::2])
 
+    #for val in zip(expected, predicted):
+    #    print(val)
+
     print("Classification report for classifier %s:\n%s\n"
           % (classifier, metrics.classification_report(expected, predicted)))
-    print("Confusion matrix:\n%s" %
-          metrics.confusion_matrix(expected, predicted))
+    cm = metrics.confusion_matrix(expected, predicted)
+    print("Confusion matrix:\n%s" % cm)
 
-#analyze("Data\\Pickles\\FeatureVectors\\4Graphlet\\590Testing")
+
+#pickleClassifier(generateClassifier(*retrieveFeatures()))
+#analyze("Data\\Pickles\\FeatureVectors\\4Graphlet\\Vision", "Data\\Pickles\\Classifiers\\all.txt")
+generateCFGraphics()
