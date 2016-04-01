@@ -66,7 +66,7 @@ def partitionEdges(l):
             curList = [edge]
     return retList
 
-# TODO: Actually figure out what you're trying to do
+
 def messagePathFeatures(mg, maxPathLength=10):
     #Each robot counts the number of times a path of length n has ended on it
     numPathList = [0 for val in range(maxPathLength+1)]
@@ -90,19 +90,6 @@ def messagePathFeatures(mg, maxPathLength=10):
     #    numPathList = [val / sum(numPathList) for val in numPathList]
     return numPathList
 
-
-
-def tempMW():
-    f = []
-    for(path, dirs, files) in os.walk("Data\\Pickles\\MotionGraphs\\Robots\\RedVaries"):
-        for fileName in files:
-            fullName = os.path.join(path, fileName)
-            f.append(fullName)
-    for fileName in f:
-        mg = pickle.load(open(fileName, "rb"))
-        print(messagePathFeatures(mg))
-    #mg = pickle.load(open(f[0], "rb"))
-    #print(messagePathFeatures(mg))
 
 def motionGraphToAdjMatrix(motionGraph, isDirected=False):
     n = motionGraph.numVertices
@@ -145,8 +132,9 @@ def serializeAdjMats(dirToPopulate="Data\\Pickles\\AdjMats\\Undirected"):
         pickle.dump((mg.label, mgMat), open(adjMatLocation, "wb"))
 
 
-def serializeFeatVecs(dirToPopulate="Data\\Pickles\\FeatureVectors\\4Graphlet", kernelFunc=fourGraphletFeatures):
-    sourceDir = "Data\\Pickles\\AdjMats\\Undirected"
+def serializeFeatVecs(dirToPopulate="Data\\Pickles\\FeatureVectors\\MessagePath",
+                      kernelFunc=messagePathFeatures):
+    sourceDir = "Data\\Pickles\\MotionGraphs"
     f = []
     for(path, dirs, files) in os.walk(sourceDir):
         for fileName in files:
@@ -155,11 +143,11 @@ def serializeFeatVecs(dirToPopulate="Data\\Pickles\\FeatureVectors\\4Graphlet", 
 
     for fileName in f:
         print("Generating feature vector for file: ", fileName)
-        (label, mgMat) = pickle.load(open(fileName, "rb"))
-        featureVector = kernelFunc(mgMat)
+        mg = pickle.load(open(fileName, "rb"))
+        featureVector = kernelFunc(mg)
 
         featVecLocation = fileName.replace(sourceDir, dirToPopulate)
-        pickle.dump((featureVector, label), open(featVecLocation, "wb"))
+        pickle.dump((featureVector, mg.label), open(featVecLocation, "wb"))
 
 #----------------------------------------
 
@@ -219,7 +207,7 @@ def saveConfMat(fileToAnalyze):
     plt.clf()
 
 
-def generateCFGraphics(rootDir="Results\\4Graphlet"):
+def generateCFGraphics(rootDir="Results\\MessagePath"):
     f = []
     for(path, dirs, files) in walk(rootDir):
         for fileName in files:
@@ -231,7 +219,7 @@ def generateCFGraphics(rootDir="Results\\4Graphlet"):
         saveConfMat(fileName)
 
 
-def retrieveFeatures(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet"):
+def retrieveFeatures(dirToAnalyze="Data\\Pickles\\FeatureVectors\\MessagePath"):
     print("Loading feature vectors for", dirToAnalyze)
     f = []
     for(path, dirs, files) in walk(dirToAnalyze):
@@ -259,7 +247,7 @@ def generateClassifier(featureArray, labelArray):
     return classifier
 
 
-def pickleClassifier(classifier, pickleLocation="Data\\Pickles\\Classifiers\\4GAll.txt"):
+def pickleClassifier(classifier, pickleLocation="Data\\Pickles\\Classifiers\\MPAll.p"):
     pickle.dump(classifier, open(pickleLocation, "wb"))
     print("Classifier serialized")
 
@@ -275,8 +263,8 @@ def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet", classifierL
     expected = labelArray[1::2]
     predicted = classifier.predict(featureArray[1::2])
 
-    #for val in zip(expected, predicted):
-    #    print(val)
+    for val in zip(expected, predicted):
+        print(val)
 
     print("Classification report for classifier %s:\n%s\n"
           % (classifier, metrics.classification_report(expected, predicted)))
@@ -285,5 +273,5 @@ def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet", classifierL
 
 
 #pickleClassifier(generateClassifier(*retrieveFeatures()))
-#analyze("Data\\Pickles\\FeatureVectors\\4Graphlet\\Vision", "Data\\Pickles\\Classifiers\\4GAll.txt")
+#analyze("Data\\Pickles\\FeatureVectors\\MessagePath\\Robots\\RedVaries")
 #generateCFGraphics()

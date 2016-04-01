@@ -1,7 +1,7 @@
 Author: Ryan Lear
-Last modified: May 10, 2015
+Last modified: April 1, 2016
 
-The program rb.py creates two randomly placed sets of robots and runs based on a supplied updater. Currently included are three updaters. The first is a random walk, where each robot picks a random direction and moves in that direction. The second is resource collection, in which each robot moves to a series of goals. As currently implemented, the goals are hard coded. The third is a simple form of dispersion, where each robot tries to move away from the centroid of its neighbors.
+rb.py creates two randomly placed sets of robots and runs based on a supplied updater. Currently included are three updaters. The first is a random walk, where each robot picks a random direction and moves in that direction. The second is resource collection, in which each robot moves to a series of goals. As currently implemented, the goals are hard coded. The third is a simple form of dispersion, where each robot tries to move away from the centroid of its neighbors. The fourth is contraction, where robots try to get close to each other. The last is static, where all robots stay still.
 
 Adding a new behavior for the red robots requires adding a method to rbutils.py which accepts the variables (rlist, xlo, xhi, ylo, yhi). "rlist" refers to the robots to update, and the next four are upper and lower bounds for the robots. By default, the bounds are from 0 to 1 for each axis.
 
@@ -31,3 +31,7 @@ id,x,y,vis,maxspeed
 [num red neighbors],[list of red neighbors id]
 [num blue neighbors],[list of blue neighbors id]] (repeating at each time step)"
 
+
+rbGenerate.py contains functions for generating motion graphs and generating ranges of data. Motion graphs consist of vertices representing observers and edges representing motion of an agent from one observer to another.
+
+rbAnalyze.py contains functions for analyzing and classifying motion graphs. There are several serialization methods to both speed up testing and store intermediate data. There are also a few methods for automatically generating graphics of resulting confusion matrices using matplotlib.
