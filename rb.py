@@ -9,6 +9,7 @@ import os
 import datetime
 import rbUtils
 
+
 def run_game(width, height, fps, active_scene):
     pygame.init()
     screen = pygame.display.set_mode((width, height), RESIZABLE)

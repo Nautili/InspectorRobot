@@ -198,6 +198,8 @@ def vecAdd(point, vec):
 #-------------------------------------
 
 # Generate data for individual functions
+
+
 def generateFunctionData(updater, numBlue=80, numRed=80, numSamples=150, blueVis=0.2, redVis=0.11, directory="Data\\Test"):
     blueRobots = rbUtils.initRobots(numBlue)
     redRobots = rbUtils.initRobots(numRed)

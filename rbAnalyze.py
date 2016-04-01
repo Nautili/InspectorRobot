@@ -6,6 +6,7 @@ from os import walk
 from sklearn import svm, metrics
 import matplotlib.pyplot as plt
 
+
 def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
     numVertices = mat.shape[0]
     # ensure that every possible set is included
@@ -26,17 +27,17 @@ def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
         degCounts = [0, 0, 0, 0]
         edgeCounts = {}
         sampVerts = random.sample(range(numVertices), 4)
-        #for each possibility of four vertices
+        # for each possibility of four vertices
         for i in range(4):
             for j in range(4):
                 numEdges = mat[sampVerts[i], sampVerts[j]]
                 if numEdges > 0:
-                    #initialize if not in dictionary
-                    if frozenset([i,j]) not in edgeCounts:
-                        edgeCounts[frozenset([i,j])] = 0
-                    edgeCounts[frozenset([i,j])] += numEdges
+                    # initialize if not in dictionary
+                    if frozenset([i, j]) not in edgeCounts:
+                        edgeCounts[frozenset([i, j])] = 0
+                    edgeCounts[frozenset([i, j])] += numEdges
                     degCounts[j] += 1
-        #Add weight for the number of graphs in a multigraph
+        # Add weight for the number of graphs in a multigraph
         numGraphs = 1
         if multiCount:
             numGraphs = 0
@@ -47,7 +48,7 @@ def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
     featureList = []
     for key in sorted(featureDict):
         featureList += [featureDict[key]]
-    #print(featureList)
+    # print(featureList)
     return featureList
 
 
@@ -68,12 +69,12 @@ def partitionEdges(l):
 
 
 def messagePathFeatures(mg, maxPathLength=10):
-    #Each robot counts the number of times a path of length n has ended on it
-    numPathList = [0 for val in range(maxPathLength+1)]
+    # Each robot counts the number of times a path of length n has ended on it
+    numPathList = [0 for val in range(maxPathLength + 1)]
 
-    #for each observed robot
+    # for each observed robot
     for observedEdges in mg.graph:
-        #each observer maintains a list of current sightings and paths
+        # each observer maintains a list of current sightings and paths
         currentPaths = [[] for observer in range(mg.numVertices)]
 
         for edge in observedEdges:
@@ -86,7 +87,7 @@ def messagePathFeatures(mg, maxPathLength=10):
                 currentPaths[end] = currentPaths[start] + [end]
 
             currentPaths[start] = []
-    #if sum(numPathList) > 0:
+    # if sum(numPathList) > 0:
     #    numPathList = [val / sum(numPathList) for val in numPathList]
     return numPathList
 
@@ -151,8 +152,10 @@ def serializeFeatVecs(dirToPopulate="Data\\Pickles\\FeatureVectors\\MessagePath"
 
 #----------------------------------------
 
-#TODO: Make this do things
-#Create and export bar graph of ranges
+# TODO: Make this do things
+# Create and export bar graph of ranges
+
+
 def genBarGraph():
     mu, sigma = 100, 15
     x = mu + sigma * np.random.randn(10000)
@@ -167,6 +170,7 @@ def genBarGraph():
     plt.grid(True)
     plt.show()
 
+
 def genConfMatGraphic(cm, labels, title='Confusion matrix', cmap=plt.cm.OrRd):
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
@@ -177,6 +181,7 @@ def genConfMatGraphic(cm, labels, title='Confusion matrix', cmap=plt.cm.OrRd):
     plt.tight_layout()
     plt.ylabel('Expected Value')
     plt.xlabel('Predicted Value')
+
 
 def saveConfMat(fileToAnalyze):
     labels = []
@@ -190,8 +195,8 @@ def saveConfMat(fileToAnalyze):
         labels.append(lines[labelStart + numLabels].split()[0])
         numLabels += 1
 
-    cmStart = labelStart + numLabels + 5 #magic number defined by file format
-    cm = lines[cmStart:cmStart+numLabels]
+    cmStart = labelStart + numLabels + 5  # magic number defined by file format
+    cm = lines[cmStart:cmStart + numLabels]
     cm = [[int(val) for val in line.strip(" []\n").split()] for line in cm]
     cm = np.array(cm)
 
@@ -202,8 +207,8 @@ def saveConfMat(fileToAnalyze):
 
     plt.figure()
     genConfMatGraphic(cm_normalized, labels, fileName)
-    #plt.show()
-    plt.savefig(dirToSave,bbox_inches="tight")
+    # plt.show()
+    plt.savefig(dirToSave, bbox_inches="tight")
     plt.clf()
 
 
@@ -228,7 +233,7 @@ def retrieveFeatures(dirToAnalyze="Data\\Pickles\\FeatureVectors\\MessagePath"):
             f.append(fullName)
 
     featureVectors = []
-    labels= []
+    labels = []
     for fileName in f:
         (featureVector, label) = pickle.load(open(fileName, "rb"))
         featureVectors += [featureVector]
@@ -254,10 +259,10 @@ def pickleClassifier(classifier, pickleLocation="Data\\Pickles\\Classifiers\\MPA
 
 def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet", classifierLocation=""):
     featureArray, labelArray = retrieveFeatures(dirToAnalyze)
-    #Interleaved testing and training
+    # Interleaved testing and training
     if classifierLocation == "":
         classifier = generateClassifier(featureArray, labelArray)
-    else: #test using generated classifier
+    else:  # test using generated classifier
         classifier = pickle.load(open(classifierLocation, "rb"))
 
     expected = labelArray[1::2]
@@ -272,6 +277,6 @@ def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet", classifierL
     print("Confusion matrix:\n%s" % cm)
 
 
-#pickleClassifier(generateClassifier(*retrieveFeatures()))
-#analyze("Data\\Pickles\\FeatureVectors\\MessagePath\\Robots\\RedVaries")
-#generateCFGraphics()
+# pickleClassifier(generateClassifier(*retrieveFeatures()))
+# analyze("Data\\Pickles\\FeatureVectors\\MessagePath\\Robots\\RedVaries")
+# generateCFGraphics()

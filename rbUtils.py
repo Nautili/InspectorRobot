@@ -140,6 +140,8 @@ def changeVis(rlist, d):
     return newList
 
 # set visibility for all robots
+
+
 def setVis(rlist, vis):
     for rob in rlist:
         rob.vis = vis
@@ -174,7 +176,7 @@ def addNoise(rob, speed, nval):
     rob.x += (2 * random.random() - 1) * speed * nval
     rob.y += (2 * random.random() - 1) * speed * nval
 
-#fix positions based on bounds
+# fix positions based on bounds
 
 
 def checkBounds(rob, xlo, xhi, ylo, yhi):
@@ -188,6 +190,8 @@ def checkBounds(rob, xlo, xhi, ylo, yhi):
         rob.y = yhi
 
 # move a single robot randomly
+
+
 def moveRandom(rob):
     dx = (2 * random.random() - 1)
     dy = (2 * random.random() - 1)
@@ -245,6 +249,8 @@ def disperse(rlist, xlo=0, xhi=1, ylo=0, yhi=1):
         checkBounds(rob, xlo, xhi, ylo, yhi)
 
 # move robots together
+
+
 def contract(rlist, xlo=0, xhi=1, ylo=0, yhi=1):
     for rob in rlist:
         if len(rob.nearSame) > 0:
