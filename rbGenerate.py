@@ -144,6 +144,7 @@ def displayGraph(motionGraphs, blueRobots, graphsVisible):
 
             if quit_attempt:
                 pygame.quit()
+                return
 
         screen.fill(egg)
 
@@ -251,10 +252,16 @@ def generateData():
     for func in funcList:
         for numSamples in range(100, 600, 5):
             generateFunctionData(func, numSamples=numSamples,
-                                 directory="Data\\Graphs\\Samples")
+                                 directory="Data\\Graphs\\Time")
 
 
 def demo():
-    mg = genGraph(r'Data\\Graphs\\590Testing\\resourceCollector15_05_18-08_54_20.csv')
-    displayGraph(mg, bluePositions, list(range(redCount)))
-    #displayGraph(mg, bluePositions, [0])
+    fileList = ["contract16_03_23-22_33_38.csv",
+                "disperse16_03_23-22_14_05.csv",
+                "randomStep16_03_23-21_33_16.csv",
+                "resourceCollector16_03_23-21_53_57.csv",
+                "static16_03_23-22_51_19.csv"]
+    for fileName in fileList:
+        mg = genGraph("Data\\Graphs\\Samples\\" + fileName)
+        displayGraph(mg, bluePositions, list(range(redCount)))
+        #displayGraph(mg, bluePositions, [0])

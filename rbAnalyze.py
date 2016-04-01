@@ -51,6 +51,59 @@ def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
     return featureList
 
 
+def partitionEdges(l):
+    if len(l) == 0:
+        return l
+    retList = []
+    curList = []
+    curTime = l[0].time
+    for edge in l:
+        if edge.time == curTime:
+            curList.append(edge)
+        else:
+            curTime = edge.time
+            retList.append(curList)
+            curList = [edge]
+    return retList
+
+# TODO: Actually figure out what you're trying to do
+def messagePathFeatures(mg, maxPathLength=10):
+    #Each robot counts the number of times a path of length n has ended on it
+    numPathList = [0 for val in range(maxPathLength+1)]
+
+    #for each observed robot
+    for observedEdges in mg.graph:
+        #each observer maintains a list of current sightings and paths
+        currentPaths = [[] for observer in range(mg.numVertices)]
+
+        for edge in observedEdges:
+            start = edge.startID
+            end = edge.endID
+            if end in currentPaths[start] or len(currentPaths[start]) == maxPathLength:
+                numPathList[len(currentPaths[start])] += 1
+                currentPaths[end] = [end]
+            elif len(currentPaths[end]) <= len(currentPaths[start]):
+                currentPaths[end] = currentPaths[start] + [end]
+
+            currentPaths[start] = []
+    #if sum(numPathList) > 0:
+    #    numPathList = [val / sum(numPathList) for val in numPathList]
+    return numPathList
+
+
+
+def tempMW():
+    f = []
+    for(path, dirs, files) in os.walk("Data\\Pickles\\MotionGraphs\\Robots\\RedVaries"):
+        for fileName in files:
+            fullName = os.path.join(path, fileName)
+            f.append(fullName)
+    for fileName in f:
+        mg = pickle.load(open(fileName, "rb"))
+        print(messagePathFeatures(mg))
+    #mg = pickle.load(open(f[0], "rb"))
+    #print(messagePathFeatures(mg))
+
 def motionGraphToAdjMatrix(motionGraph, isDirected=False):
     n = motionGraph.numVertices
     adjMatrix = np.zeros((n, n), dtype=int)
@@ -134,8 +187,8 @@ def genConfMatGraphic(cm, labels, title='Confusion matrix', cmap=plt.cm.OrRd):
     plt.xticks(tick_marks, labels, rotation=45)
     plt.yticks(tick_marks, labels)
     plt.tight_layout()
-    plt.ylabel('True label')
-    plt.xlabel('Predicted label')
+    plt.ylabel('Expected Value')
+    plt.xlabel('Predicted Value')
 
 def saveConfMat(fileToAnalyze):
     labels = []
@@ -163,6 +216,7 @@ def saveConfMat(fileToAnalyze):
     genConfMatGraphic(cm_normalized, labels, fileName)
     #plt.show()
     plt.savefig(dirToSave,bbox_inches="tight")
+    plt.clf()
 
 
 def generateCFGraphics(rootDir="Results\\4Graphlet"):
@@ -205,7 +259,7 @@ def generateClassifier(featureArray, labelArray):
     return classifier
 
 
-def pickleClassifier(classifier, pickleLocation="Data\\Pickles\\Classifiers\\all.txt"):
+def pickleClassifier(classifier, pickleLocation="Data\\Pickles\\Classifiers\\4GAll.txt"):
     pickle.dump(classifier, open(pickleLocation, "wb"))
     print("Classifier serialized")
 
@@ -231,5 +285,5 @@ def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet", classifierL
 
 
 #pickleClassifier(generateClassifier(*retrieveFeatures()))
-#analyze("Data\\Pickles\\FeatureVectors\\4Graphlet\\Vision", "Data\\Pickles\\Classifiers\\all.txt")
-generateCFGraphics()
+#analyze("Data\\Pickles\\FeatureVectors\\4Graphlet\\Vision", "Data\\Pickles\\Classifiers\\4GAll.txt")
+#generateCFGraphics()
