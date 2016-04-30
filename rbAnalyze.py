@@ -2,12 +2,16 @@ from rbGenerate import *
 import numpy as np
 import random
 from os import walk
+import re
+import time
 
-from sklearn import svm, metrics
+from sklearn import svm, metrics, cross_validation, preprocessing
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 
-def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
+def fourGraphletFeatures(mat, numSamples=1000, multiCount=True):
+    #print("Samples: ", numSamples)
     numVertices = mat.shape[0]
     # ensure that every possible set is included
     # frozensets are hashable
@@ -52,22 +56,6 @@ def fourGraphletFeatures(mat, multiCount=True, numSamples=10000):
     return featureList
 
 
-def partitionEdges(l):
-    if len(l) == 0:
-        return l
-    retList = []
-    curList = []
-    curTime = l[0].time
-    for edge in l:
-        if edge.time == curTime:
-            curList.append(edge)
-        else:
-            curTime = edge.time
-            retList.append(curList)
-            curList = [edge]
-    return retList
-
-
 def messagePathFeatures(mg, maxPathLength=10):
     # Each robot counts the number of times a path of length n has ended on it
     numPathList = [0 for val in range(maxPathLength + 1)]
@@ -103,12 +91,44 @@ def motionGraphToAdjMatrix(motionGraph, isDirected=False):
     return adjMatrix
 
 
-def serializeGraphs():
+def showGraphStats():
+    sourceDir = "Data\\Pickles\\MotionGraphs"
+    f = getFilesInDirectory(sourceDir)
+
+    totalEdges = 0
+    maxDegree = 0
+    totalSparsity = 0
+    for fileName in f:
+        print("Extracting data from: ",fileName)
+        motionGraph = pickle.load(open(fileName, "rb"))
+        edges = [edge for subgraph in motionGraph.graph for edge in subgraph]
+        startIDs = [edge.startID for edge in edges]
+        totalEdges += len(edges)
+        degrees = [startIDs.count(x) for x in set(startIDs)]
+        if len(degrees) > 0 and max(degrees) > maxDegree:
+            maxDegree = max(degrees)
+        edgeIDs = set([(edge.startID,edge.endID) for edge in edges])
+        sparsity = len(edgeIDs) / (motionGraph.numVertices**2)
+        totalSparsity += sparsity
+        print("Edges: ", len(edges))
+        print("Sparsity: ", sparsity)
+    print("Total: ", totalEdges)
+    print("Max degree: ", maxDegree)
+    print("Average edges ", totalEdges / len(f))
+    print("Average sparsity ", totalSparsity / len(f))
+
+
+def getFilesInDirectory(rootDir):
     f = []
-    for(path, dirs, files) in os.walk("Data\\Graphs"):
+    for(path, dirs, files) in os.walk(rootDir):
         for fileName in files:
             fullName = os.path.join(path, fileName)
             f.append(fullName)
+    return f
+
+
+def serializeGraphs():
+    f = getFilesInDirectory("Data\\Graphs")
     for fileName in f:
         print("Generating motion graph for file: ", fileName)
         mg = genGraph(fileName)
@@ -117,58 +137,74 @@ def serializeGraphs():
         pickle.dump(mg, open(pickleFile, "wb"))
 
 
-def serializeAdjMats(dirToPopulate="Data\\Pickles\\AdjMats\\Undirected"):
+def serializeAdjMats(dirToPopulate="Data\\Pickles\\AdjMats\\Directed"):
     sourceDir = "Data\\Pickles\\MotionGraphs"
-    f = []
-    for(path, dirs, files) in os.walk(sourceDir):
-        for fileName in files:
-            fullName = os.path.join(path, fileName)
-            f.append(fullName)
+    f = getFilesInDirectory(sourceDir)
 
     for fileName in f:
-        print("Generating adjacency matrix for file: ", fileName)
+        print("Generating pickle for file: ", fileName)
         mg = pickle.load(open(fileName, "rb"))
-        mgMat = motionGraphToAdjMatrix(mg)
-        adjMatLocation = fileName.replace(sourceDir, dirToPopulate)
-        pickle.dump((mg.label, mgMat), open(adjMatLocation, "wb"))
+        adjMat = motionGraphToAdjMatrix(mg, True)
+
+        pickleLocation = fileName.replace(sourceDir, dirToPopulate)
+        pickle.dump((mg.label, adjMat), open(pickleLocation, "wb"))
 
 
-def serializeFeatVecs(dirToPopulate="Data\\Pickles\\FeatureVectors\\MessagePath",
-                      kernelFunc=messagePathFeatures):
-    sourceDir = "Data\\Pickles\\MotionGraphs"
-    f = []
-    for(path, dirs, files) in os.walk(sourceDir):
-        for fileName in files:
-            fullName = os.path.join(path, fileName)
-            f.append(fullName)
-
+def serialize4GraphFeats(dirToPopulate="Data\\Pickles\\FeatureVectors\\4Graphlets\\4Graphlet20000", numSamples=1000):
+    sourceDir = "Data\\Pickles\\AdjMats\\Undirected"
+    f = getFilesInDirectory(sourceDir)
+    start = time.time()
     for fileName in f:
-        print("Generating feature vector for file: ", fileName)
-        mg = pickle.load(open(fileName, "rb"))
-        featureVector = kernelFunc(mg)
+        #print("Generating feature vector for file: ", fileName)
+        adjMat = pickle.load(open(fileName, "rb"))
+        featureVector = fourGraphletFeatures(adjMat[1], numSamples)
 
         featVecLocation = fileName.replace(sourceDir, dirToPopulate)
-        pickle.dump((featureVector, mg.label), open(featVecLocation, "wb"))
+        #pickle.dump((featureVector, adjMat[0]), open(featVecLocation, "wb"))
+    end = time.time()
+    print(numSamples, end-start)
+
+
+def serializePathFeats(dirToPopulate="Data\\Pickles\\FeatureVectors\\MessagePaths\\MessagePath1", k=1):
+    sourceDir = "Data\\Pickles\\MotionGraphs"
+    f = getFilesInDirectory(sourceDir)
+
+    start = time.time()
+    for fileName in f:
+        #print("Generating feature vector for file: ", fileName)
+        mg = pickle.load(open(fileName, "rb"))
+        featureVector = messagePathFeatures(mg, k)
+
+        featVecLocation = fileName.replace(sourceDir, dirToPopulate)
+        #pickle.dump((featureVector, mg.label), open(featVecLocation, "wb"))
+    end = time.time()
+    print(k, end-start)
+
+def adjMatPicklesToText():
+    fileLocation="Data\\Pickles\\AdjMatsRaw\\Graphs"
+    sourceDir = "Data\\Pickles\\AdjMats\\Directed"
+    f = getFilesInDirectory(sourceDir)
+
+    curFileNumber = 1
+    for fileName in f:
+        print("Printing adjacency matrix for file: ", fileName)
+        label, adjMat = pickle.load(open(fileName, "rb"))
+
+        curFile = "graph" + str(curFileNumber) + ".txt"
+        writeFile = open(fileLocation + "\\" + curFile, "wt")
+
+        writeFile.write(label)
+        writeFile.write("\n")
+
+        for row in adjMat:
+            for val in row:
+                writeFile.write(str(val))
+                writeFile.write(" ")
+            writeFile.write("\n")
+        curFileNumber += 1
+    writeFile.close()
 
 #----------------------------------------
-
-# TODO: Make this do things
-# Create and export bar graph of ranges
-
-
-def genBarGraph():
-    mu, sigma = 100, 15
-    x = mu + sigma * np.random.randn(10000)
-
-    # the histogram of the data
-    n, bins, patches = plt.hist(x, 50, normed=1, facecolor='g', alpha=0.75)
-    plt.xlabel('Smarts')
-    plt.ylabel('Probability')
-    plt.title('Histogram of IQ')
-    plt.text(60, .025, r'$\mu=100,\ \sigma=15$')
-    plt.axis([40, 160, 0, 0.03])
-    plt.grid(True)
-    plt.show()
 
 
 def genConfMatGraphic(cm, labels, title='Confusion matrix', cmap=plt.cm.OrRd):
@@ -207,7 +243,7 @@ def saveConfMat(fileToAnalyze):
 
     plt.figure()
     genConfMatGraphic(cm_normalized, labels, fileName)
-    # plt.show()
+    #plt.show()
     plt.savefig(dirToSave, bbox_inches="tight")
     plt.clf()
 
@@ -224,13 +260,89 @@ def generateCFGraphics(rootDir="Results\\MessagePath"):
         saveConfMat(fileName)
 
 
+def saveStatGraph(stats):
+    keys = sorted(stats[0][0])
+
+    predictedList = []
+    for expected in stats:
+        transpose = {key:[] for key in keys}
+        for chunk in expected:
+            for key in keys:
+                transpose[key] += [chunk[key]]
+        predictedList += [transpose]
+
+    #plots = []
+    width = 1.0
+    ind = np.linspace(1,width*5,num=5)
+    colors = ["#ff9f01", "#dae820", "#0cff65", "#1187e8", "#9423ff"]
+    colorMap = dict(zip(keys, colors))
+    fig = plt.figure(figsize=(16,8))
+
+
+    for i in range(len(predictedList)):
+        bottomHeights = [1.0] * 5
+        for key in keys:
+            normalizedList = [val / 10.0 for val in predictedList[i][key]]
+            curList = tuple(normalizedList)
+            for j in range(len(curList)):
+                bottomHeights[j] -= curList[j]
+            plt.bar(ind + 6*i*width, curList, width, color=colorMap[key], bottom=tuple(bottomHeights))
+
+
+    plt.ylabel('Fraction of Guesses')
+    plt.title('Varying Number of Blue Robots')
+    xpositions = np.linspace(3.5*width,27.5*width,num=5)
+    plt.xticks(xpositions, tuple(keys))
+    #plt.yticks(np.arange(0, 1, 0.1))
+    plt.xlim([0,31*width])
+    plt.ylim([0,1.05])
+
+    #patches = [mpatches.Patch(color=col, label=key) for (col,key) in zip(colors,keys)]
+    #plt.legend(handles=patches)
+
+    plt.show()
+
+
+def getVariableStatArray(resFile):
+    f = open(resFile)
+    lines = []
+    for line in f:
+        regex = re.compile('[^a-zA-Z ]')
+        lines.append(regex.sub('', line).split())
+
+    #Partitioned file into expected values
+    expectedList = [lines[i*50:(i+1)*50] for i in range(5)]
+    #partition expected values into ranges
+    chunkedList = []
+    for expected in expectedList:
+        chunks = ([expected[i*10:(i+1)*10] for i in range(5)])
+        chunkedList += [chunks]
+
+    statList = []
+    for expected in chunkedList:
+        expectedStat = []
+        for chunk in expected:
+            curStats = {"contract":0, "disperse":0, "randomStep":0, "resourceCollector":0, "static":0}
+            for val in chunk:
+                curStats[val[1]] += 1
+            expectedStat += [curStats]
+        statList += [expectedStat]
+
+    return statList
+
+
+def generateStackGraphs(rootDir="Results\\MessagePath\\All"):
+    fileList = ["BlueRobotsEP.txt"]
+    #fileList = ["BlueRobotsEP.txt", "RedRobotsEP.txt", "BlueVisionEP.txt", "RedVisionEP.txt", "TimeEP.txt"]
+    for fileName in fileList:
+        stats = getVariableStatArray(rootDir + "\\" + fileName)
+        print("Generating stack graph for ", fileName)
+        saveStatGraph(stats)
+
+
 def retrieveFeatures(dirToAnalyze="Data\\Pickles\\FeatureVectors\\MessagePath"):
     print("Loading feature vectors for", dirToAnalyze)
-    f = []
-    for(path, dirs, files) in walk(dirToAnalyze):
-        for fileName in files:
-            fullName = os.path.join(path, fileName)
-            f.append(fullName)
+    f = getFilesInDirectory(dirToAnalyze)
 
     featureVectors = []
     labels = []
@@ -245,10 +357,13 @@ def retrieveFeatures(dirToAnalyze="Data\\Pickles\\FeatureVectors\\MessagePath"):
     return (featureArray, labelArray)
 
 
-def generateClassifier(featureArray, labelArray):
+def generateClassifier(featureArray, labelArray, myKernel='linear'):
     print("Learning...")
-    classifier = svm.SVC(kernel='linear', gamma=0.001)
+    start = time.time()
+    classifier = svm.SVC(kernel=myKernel, gamma=0.001)
     classifier.fit(featureArray[::2], labelArray[::2])
+    end = time.time()
+    print("Elapsed time: ", end - start)
     return classifier
 
 
@@ -257,19 +372,32 @@ def pickleClassifier(classifier, pickleLocation="Data\\Pickles\\Classifiers\\MPA
     print("Classifier serialized")
 
 
-def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet", classifierLocation=""):
-    featureArray, labelArray = retrieveFeatures(dirToAnalyze)
+def crossVal(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4GraphletSmall", classifierLocation=""):
+    exampleArray, labelArray = retrieveFeatures(dirToAnalyze)
+    # Interleaved testing and training
+
+    clf = svm.SVC(kernel='linear',gamma=0.001)
+    scores = cross_validation.cross_val_score(clf,exampleArray,labelArray,cv=10)
+
+    print("Accuracy: %0.2f (+/- %0.2f)" % (scores.mean(), scores.std() * 2))
+
+def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlets\\4Graphlet10000", classifierLocation=""):
+    exampleArray, labelArray = retrieveFeatures(dirToAnalyze)
+
     # Interleaved testing and training
     if classifierLocation == "":
-        classifier = generateClassifier(featureArray, labelArray)
+        print("Generating classifier")
+
+        classifier = generateClassifier(exampleArray, labelArray)
+        #pickleClassifier(classifier,"Data\\Pickles\\Classifiers\\" + dirToAnalyze.split("\\")[-1] + ".p")
     else:  # test using generated classifier
         classifier = pickle.load(open(classifierLocation, "rb"))
 
     expected = labelArray[1::2]
-    predicted = classifier.predict(featureArray[1::2])
+    predicted = classifier.predict(exampleArray[1::2])
 
-    for val in zip(expected, predicted):
-        print(val)
+    #for val in zip(expected, predicted):
+    #    print(val)
 
     print("Classification report for classifier %s:\n%s\n"
           % (classifier, metrics.classification_report(expected, predicted)))
@@ -277,6 +405,16 @@ def analyze(dirToAnalyze="Data\\Pickles\\FeatureVectors\\4Graphlet", classifierL
     print("Confusion matrix:\n%s" % cm)
 
 
+def batchAnalyze():
+    #dirsToAnalyze = [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 20000]
+    dirsToAnalyze = [6] #list(range(1,11))
+    for d in dirsToAnalyze:
+        #serialize4GraphFeats("Data\\Pickles\\FeatureVectors\\4Graphlets\\4Graphlet" + str(d), d)
+        serializePathFeats("Data\\Pickles\\FeatureVectors\\MessagePaths\\MessagePath" + str(d), d)
+        #analyze("Data\\Pickles\\FeatureVectors\\4Graphlets\\4Graphlet" + str(d))
+
+
 # pickleClassifier(generateClassifier(*retrieveFeatures()))
-# analyze("Data\\Pickles\\FeatureVectors\\MessagePath\\Robots\\RedVaries")
+# analyze("Data\\Pickles\\FeatureVectors\\MessagePath")
+# analyze()
 # generateCFGraphics()

@@ -16,7 +16,6 @@ def run_game(width, height, fps, active_scene):
     clock = pygame.time.Clock()
 
     paused = False
-
     while True:
         pressed_keys = pygame.key.get_pressed()
 
@@ -200,3 +199,6 @@ class RedBlue():
 # randomStep is run by default
 def runRB():
     run_game(600, 600, 60, RedBlue(80, 80, rbUtils.randomStep))
+
+
+runRB()
