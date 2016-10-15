@@ -1,5 +1,5 @@
 # Scene code from http://www.nerdparadise.com/tech/python/pygame/basics/part7/
-# The first half is just boiler-plate stuff...
+# The first half is just boiler-plate...
 
 import pygame
 from pygame.locals import *
